@@ -1,50 +1,83 @@
 # Backend API Documentation
 
-## User Registration Endpoint
+This file documents the two user-related endpoints currently implemented.
 
-### `POST /users/register`
+---
 
-Registers a new user in the system.
+## 1. Register
 
-#### Description
-This endpoint allows clients to create a new user by providing their full name, email, and password. The request body is validated using `express-validator` and a hashed password is stored in the database. On success, a JSON Web Token is returned along with the user information (excluding the password).
+**`POST /users/register`**
 
-#### Request Format
-Content-Type: `application/json`
+**Description:**
+Create a new account by supplying full name, email and password. The email must be unique and the password will be hashed.
+
+**Request body (`application/json`):**
 
 ```json
 {
-  "fullname": {
-    "firstname": "John",
-    "lastname": "Doe"        
-  },
+  "fullname": { "firstname": "John", "lastname": "Doe" },
   "email": "john.doe@example.com",
   "password": "password123"
 }
 ```
 
-- `fullname.firstname` (string, required): At least 3 characters.
-- `fullname.lastname` (string, optional): At least 3 characters if provided.
-- `email` (string, required): Must be a valid email format and at least 5 characters.
-- `password` (string, required): Minimum 6 characters.
+- `fullname.firstname`: string, required (min 3 chars)
+- `fullname.lastname`: string, optional (min 3 chars if provided)
+- `email`: valid email, required, unique
+- `password`: string, required (min 6 chars)
 
-#### Responses
+**Success (201 Created):**
 
-- **201 Created**
-  - Body: `{ "token": "<jwt-token>", "user": { ... } }`
-  - Indicates successful registration; the `token` can be used for authenticated requests.
+```json
+{ "token": "<jwt>", "user": { "_id": "...", "email": "john.doe@example.com", ... } }
+```
 
-- **400 Bad Request**
-  - Body: `{ "errors": [ { "msg": "<error message>", ... } ] }`
-  - Returned when validation fails or required fields are missing.
+**Errors:**
 
-- **500 Internal Server Error**
-  - Returned on unexpected server/database errors.
-
-#### Notes
-- Passwords are hashed using bcrypt before being saved.
-- The `token` is generated with `jwt.sign` using `process.env.JWT_SECRET`.
+- `400` with validation details or `Email already registered`
+- `500` on server/db failure
 
 ---
 
-> This documentation is located in the `Backend/README.md` file. Adjust as needed when other endpoints are added.
+## 2. Login
+
+**`POST /users/login`**
+
+**Description:**
+Authenticate an existing user. The server **does not disclose** whether the email or password was wrong – you will receive a generic message instead. On success a JSON Web Token is returned in the body and set as an `HttpOnly` cookie named `token`.
+
+**Request body (`application/json`):**
+
+```json
+{
+  "email": "john.doe@example.com",
+  "password": "password123"
+}
+```
+
+- `email`: valid email, required
+- `password`: string, required (min 6 chars)
+
+**Successful response (200 OK):**
+
+```json
+{
+  "token": "<jwt>",
+  "user": { "_id": "...", "email": "john.doe@example.com", ... }
+}
+```
+
+> The same token will also be sent in a `Set-Cookie` header. Clients that rely on cookies (e.g. browsers) can use the stored cookie instead of the JSON field.
+
+**Failure responses:**
+
+- `400` if request validation fails
+- `401` with body `{ "message": "Invalid email or password" }` when credentials do not match any record.  
+  (_This is the error you saw – it means either the email doesn't exist or the password is incorrect._)
+- `500` on unexpected errors
+
+---
+
+> ⇨ ensure you call `/users/register` first and that the registration returns a token before attempting login.
+>
+> If you still receive the `Invalid email or password` message, verify the user exists in the database and that the password you supplied is exactly the one used during registration. The stored password is hashed, so you must supply the original plaintext.

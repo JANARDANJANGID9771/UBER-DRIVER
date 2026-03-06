@@ -1,0 +1,51 @@
+{
+    "github.copilot.enable": {
+        "*": true,
+        "javascript": true,
+        "javascriptreact": true,
+        "typescript": true,
+        "typescriptreact": true,
+        "python": true,
+        "java": true,
+        "html": true,
+        "css": true,
+        "json": true,
+        "plaintext": true,
+        "markdown": true
+    },
+    "github.copilot.advanced": {
+        "inlineSuggestEnabled": true
+    },
+    "editor.inlineSuggest.enabled": true,
+    "editor.suggestSelection": "first",
+    "vscode-gitignore.magic": true,
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 1000,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+    "[javascriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+    "emmet.includeLanguages": {
+        "javascript": "javascriptreact",
+        "javascriptreact": "javascript",
+        "typescript": "typescriptreact",
+        "typescriptreact": "typescript"
+    }
+}
+
