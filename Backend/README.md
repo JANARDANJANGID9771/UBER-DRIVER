@@ -81,3 +81,56 @@ Authenticate an existing user. The server **does not disclose** whether the emai
 > ⇨ ensure you call `/users/register` first and that the registration returns a token before attempting login.
 >
 > If you still receive the `Invalid email or password` message, verify the user exists in the database and that the password you supplied is exactly the one used during registration. The stored password is hashed, so you must supply the original plaintext.
+
+---
+
+## 3. Profile
+
+**`GET /users/profile`**
+
+**Description:**
+Returns information about the currently authenticated user. The request must include a valid JWT in the `Authorization` header as `Bearer <token>` or the `token` cookie set by login.
+
+**Request headers:**
+
+- `Authorization`: `Bearer <jwt>` (optional if cookie is used)
+- Cookie containing `token` (HttpOnly)
+
+**Successful response (200 OK):**
+
+```json
+{
+  "user": { "_id": "...", "email": "john.doe@example.com", "fullname": { "firstname": "John", "lastname": "Doe" }, ... }
+}
+```
+
+**Errors:**
+
+- `401` if the JWT is missing, expired, or invalid.
+- `500` on server/db failure.
+
+---
+
+## 4. Logout
+
+**`GET /users/logout`**
+
+**Description:**
+Invalidates the user's session by adding the supplied token to a blacklist and clearing the `token` cookie. The user must be authenticated (same requirements as `/profile`).
+
+**Request headers:**
+
+- `Authorization`: `Bearer <jwt>` (or rely on the `token` cookie)
+
+**Successful response (200 OK):**
+
+```json
+{ "message": "Logged out successfully" }
+```
+
+**Errors:**
+
+- `401` if the user is not authenticated.
+- `500` on internal errors.
+
+---
