@@ -134,3 +134,56 @@ Invalidates the user's session by adding the supplied token to a blacklist and c
 - `500` on internal errors.
 
 ---
+
+# Captain API Documentation
+
+The following endpoint is available under the **`/captains`** base path. All requests are JSON.
+
+## 1. Register a captain
+
+**`POST /captains/register`**
+
+**Description:**
+Create a new captain account with personal and vehicle details. An email may only be used once; the supplied password is hashed before storage.
+
+**Request body (`application/json`):**
+
+```json
+{
+  "fullname": { "firstname": "Jane", "lastname": "Smith" },
+  "email": "jane.smith@example.com",
+  "password": "secret123",
+  "vehicle": {
+    "color": "blue",
+    "plate": "ABC123",
+    "capacity": 4,
+    "vehicleType": "car"
+  }
+}
+```
+
+Field rules:
+
+- `fullname.firstname`: string, required, min 3 chars
+- `fullname.lastname`: string, optional, min 3 chars if provided
+- `email`: valid email, required, unique
+- `password`: string, required, min 6 chars
+- `vehicle.color`: string, required, min 3 chars
+- `vehicle.plate`: string, required, min 3 chars
+- `vehicle.capacity`: integer, required, min 1
+- `vehicle.vehicleType`: one of `"car"`, `"motorcycle"`, `"auto"` (required)
+
+**Success (201 Created):**
+
+```json
+{ "token": "<jwt>", "captain": { "_id": "...", "email": "jane.smith@example.com", ... } }
+```
+
+The `token` is a JWT that can be used for authenticated captain endpoints (not yet documented).
+
+**Errors:**
+
+- `400` with validation errors or `"captain already exists"` if the email is taken.
+- `500` on server/database failure.
+
+---
