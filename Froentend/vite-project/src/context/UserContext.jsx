@@ -1,9 +1,6 @@
 import { createContext, useState } from "react";
-
-export const UserDataContext = createContext({
-  user: { email: "", fullname: { firstName: "", lastName: "" } },
-  setUser: () => {},
-});
+export const UserDataContext = createContext()
+ 
 
 const UserContext = ({ children }) => {
   const [user, setUser] = useState({

@@ -137,53 +137,164 @@ Invalidates the user's session by adding the supplied token to a blacklist and c
 
 # Captain API Documentation
 
-The following endpoint is available under the **`/captains`** base path. All requests are JSON.
+All of the following endpoints live under the **`/captains`** base path and expect JSON input/output unless otherwise noted.
 
 ## 1. Register a captain
 
 **`POST /captains/register`**
 
 **Description:**
-Create a new captain account with personal and vehicle details. An email may only be used once; the supplied password is hashed before storage.
+Create a new captain account with personal and vehicle details. The email address must be unique. Passwords are hashed before storage.
 
 **Request body (`application/json`):**
 
 ```json
 {
-  "fullname": { "firstname": "Jane", "lastname": "Smith" },
-  "email": "jane.smith@example.com",
-  "password": "secret123",
+  "fullname": {
+    "firstname": "Jane", // required, string, min 3 chars
+    "lastname": "Smith" // optional, string, min 3 chars if supplied
+  },
+  "email": "jane.smith@example.com", // required, valid email, unique
+  "password": "secret123", // required, string, min 6 chars
   "vehicle": {
-    "color": "blue",
-    "plate": "ABC123",
-    "capacity": 4,
-    "vehicleType": "car"
+    "color": "blue", // required, string, min 3 chars
+    "plate": "ABC123", // required, string, min 3 chars
+    "capacity": 4, // required, integer >= 1
+    "vehicleType": "car" // required, one of: "car","motorcycle","auto"
   }
 }
 ```
 
-Field rules:
-
-- `fullname.firstname`: string, required, min 3 chars
-- `fullname.lastname`: string, optional, min 3 chars if provided
-- `email`: valid email, required, unique
-- `password`: string, required, min 6 chars
-- `vehicle.color`: string, required, min 3 chars
-- `vehicle.plate`: string, required, min 3 chars
-- `vehicle.capacity`: integer, required, min 1
-- `vehicle.vehicleType`: one of `"car"`, `"motorcycle"`, `"auto"` (required)
-
 **Success (201 Created):**
 
 ```json
-{ "token": "<jwt>", "captain": { "_id": "...", "email": "jane.smith@example.com", ... } }
+{
+  "token": "<jwt>", // authentication token for future requests
+  "captain": {
+    "_id": "...",
+    "email": "jane.smith@example.com",
+    "fullname": { "firstname": "Jane", "lastname": "Smith" },
+    "vehicle": {
+      "color": "blue",
+      "plate": "ABC123",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+    // other profile fields may be present
+  }
+}
 ```
-
-The `token` is a JWT that can be used for authenticated captain endpoints (not yet documented).
 
 **Errors:**
 
-- `400` with validation errors or `"captain already exists"` if the email is taken.
-- `500` on server/database failure.
+- `400` with validation details if any field is missing or malformed, or the body isn't JSON.
+- `400` with message `"captain already exists"` when the email is already in use.
+- `500` on unexpected server or database failures.
+
+---
+
+## 2. Login a captain
+
+**`POST /captains/login`**
+
+**Description:**
+Authenticate an existing captain using their email and password. The response includes a JWT which is also set as an HttpOnly cookie named `token`.
+
+**Request body (`application/json`):**
+
+```json
+{
+  "email": "jane.smith@example.com", // required, valid email
+  "password": "secret123" // required, string, min 6 chars
+}
+```
+
+**Success (200 OK):**
+
+```json
+{
+  "token": "<jwt>", // same token sent as cookie
+  "captain": {
+    // profile object without password
+    "_id": "...",
+    "email": "jane.smith@example.com",
+    "fullname": { "firstname": "Jane", "lastname": "Smith" },
+    "vehicle": {
+      "color": "blue",
+      "plate": "ABC123",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+  }
+}
+```
+
+**Errors:**
+
+- `400` when validation of the request body fails.
+- `401` with `{ "message": "Invalid email or password" }` when credentials are incorrect.
+- `500` for server/database errors.
+
+---
+
+## 3. Get captain profile
+
+**`GET /captains/profile`**
+
+**Description:**
+Returns the currently authenticated captain's profile. Requires a valid JWT in either the `Authorization: Bearer <token>` header or the `token` cookie.
+
+**Headers:**
+
+- `Authorization`: `Bearer <jwt>` (optional if cookie is present)
+- `Cookie`: `token=<jwt>` (HttpOnly)
+
+**Success (200 OK):**
+
+```json
+{
+  "captain": {
+    "_id": "...",
+    "email": "jane.smith@example.com",
+    "fullname": { "firstname": "Jane", "lastname": "Smith" },
+    "vehicle": {
+      "color": "blue",
+      "plate": "ABC123",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+    // additional stored fields may appear
+  }
+}
+```
+
+**Errors:**
+
+- `401` if JWT is missing, expired, invalid, or blacklisted.
+- `500` on server errors.
+
+---
+
+## 4. Logout a captain
+
+**`GET /captains/logout`**
+
+**Description:**
+Invalidates the supplied token by adding it to a blacklist and clears the `token` cookie. Authentication is required (same as `/profile`).
+
+**Headers:**
+
+- `Authorization`: `Bearer <jwt>` (or rely on cookie)
+
+**Success (200 OK):**
+
+```json
+{ "message": "Logout successfully" }
+```
+
+**Errors:**
+
+- `401` if the user is not authenticated.
+- `500` on internal server errors.
 
 ---
